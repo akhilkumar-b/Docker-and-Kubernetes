@@ -1,0 +1,285 @@
+Open docker quicks start terminal and then type the command
+
+docker run hello-world
+docker version
+
+
+Docker daemon is docker server when we run hello world command, docker performs the following steps:
+To generate this message, Docker took the following steps:
+ 1. The Docker client contacted the Docker daemon.
+ 2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
+    (amd64)
+ 3. The Docker daemon created a new container from that image which runs the
+    executable that produces the output you are currently reading.
+ 4. The Docker daemon streamed that output to the Docker client, which sent it
+    to your terminal.
+
+# Creating and Running a container from an image
+docker run hello-world
+
+# In busybox image, ls and echo are two executable programs. But we can't run those commands in hello-world image since those programs are not there in that image.
+
+docker run busybox ls
+docker run busybox echo hi there
+
+# To list all running containers
+docker ps
+
+docker run busybox ping google.com
+
+docker ps --all
+
+# create a container using image which returns container id
+
+docker create hello-world
+
+# To start the container
+docker start -a containerid
+
+# Remove stopped containers since this will occupy space and also clean cache
+
+docker system prune
+
+# To get the log outputs of a container
+
+docker logs containerid
+
+# To stop container we use docker stop which provides SIGTERM signal to terminate the process and allows some time to complete the running process before terminating. This will give 10 seconds time to clean the space or save the file and even after 10 seconds if this doesn't stop, docker will execute kill command.
+
+docker stop containerid
+
+# docker kill command will provide SIGKILL signal to shutdown the container right now
+
+docker kill containerid
+
+# To start the redis server
+
+docker run redis
+
+# How to execute commands in running conatiners
+
+docker exec -it containerid command
+
+exec - Run another command
+-it - Allow us to provide input to the container
+
+# The below statement will execute another command redis-cli in the same container where redis server is running
+
+docker exec -it containerid redis-cli
+
+# Every container we are running is running inside of a virtual machine running linux
+
+# To run another command in the existing container, we use docker exec statement all the time. So instead of using docker exec command
+all the time, we can get shell access or terminal access to your running conatiner so that we can run the commands directly insider the conatiner.
+
+docker exec -it conatinerid sh
+
+This will start the shell access
+
+cd ~/
+ls
+cd /
+ls
+export b=5
+echo $b
+redis-cli
+
+ctrl+c to exit
+
+sh is a program that is being executed inside that container. SH is a command processor or shell. It's something that allows us to type commands in and have them executed inside that container.
+
+# Another way to starting the shell or terminal to run commands inside the container is
+
+docker run -it busybox sh
+
+busybox is the image use to create a container and sh is the program/ command to be run inside the container which start the shell or terminals to run commands inside the container.
+
+ls
+
+ping google.com
+
+touch hithere      # This will create a new file
+
+# File systems cannot be shared between the containers unless we form a connnection between those two containers.
+
+# Docker file -  Configuration to define how our conatiner should behave
+
+# Creating a docker file
+1. Specify a base image
+2. Run some commands to install additional programs
+3. Specify a command to run on container startup
+
+
+# Creating redis image
+
+mkdir redis-image
+cd redis-image
+code .     # This command will open visual studio code
+
+#In the code, create a new file named Dockerfile and then add this code
+
+# Use an existing docker image as a base
+FROM alpine                     # alpine will be used as base image
+
+# Download and install a dependency
+RUN apk add --update redis
+RUN apk add --update gcc
+
+# Tell the image what to do when it starts as a container
+CMD ["redis-server"]                 # This tells what command to execute when our custom image is used for creating a container
+
+and then go back to docker terminal and then lets build the image
+
+docker build .
+
+#The above command runs the code and build the image for us and provides an id
+and then we run the image
+
+docker run imageid   # This is used to create container from our custom image using imageid
+
+But normally we use image as busybox, hello-world with some name instead of imageid. In order to give some name to our image, we can tag our image with some name during docker build like below
+
+docker build -t dockerid/(repo/projectname):version .
+
+docker build -t stephengrider/redis:latest .
+
+docker build -t akhil/redis:latest .
+docker run akhil/redis:latest
+
+
+
+# Manually doing the same process which we have done using docker file
+
+docker run -it alpine sh
+apk add --update redis
+
+#Open new docker window
+docker ps      # take the id of the running container
+docker commit -c 'CMD ["redis-server"]' containerid   # This will be the way to set the default command which will be executed when we                                                         create a conatiner out of our custom image 
+
+docker run containerid
+
+
+
+
+# Docker project
+
+# Wrapping Nodejs web application in docker conatiner and calling it from local browser
+mkdir simpleweb
+cd simpleweb
+code .
+
+# New file package.json where we will mention the dependencies express with any version(*) and the start script for the container which is index.js when our image is used to create a container.
+
+{
+    "dependencies": {
+        "express": "*"
+    },
+    "scripts": {
+        "start": "node index.js"
+    }
+}
+
+# index.js file
+
+const express = require('express');
+
+const app = express();
+
+app.get('/', (req,res) => {
+    res.send('Hi There');
+});
+
+app.listen(8080, () => {
+    console.log('Listening to port 8080');
+});
+
+# Dockerfile
+
+FROM node:alpine    # This is the base image which we will use to create a container to run the next run command
+
+RUN npm install     # This will throw an error because npm will search for package.json file where we will define our dependencies to be 		      installed by npm will be defined. But package.json and index.js will not be available in the file system of our 		      container. We will need to provide permission to use those files in our container in the docker file.
+WORKDIR /usr/app    # Setting up working directory so all the files that will be copied from local machine will be placed under /usr/app 		      and also the following commnds will be executed in this working directory
+copy ./ ./          # This command will copy all the files in the local machine to the file system in the container
+
+#Now we will run the command
+
+RUN npm install     # This will install all the dependencies in the package.json file using the npm installer
+
+CMD ["npm", "start"]    # This will be the default command to run when we create a container from our final image.
+
+# When we create a container from our image. This will execute the default command which will run index.js file and return hi there message
+
+docker build -t akhil/simpleweb .     # This will build our final image
+
+docker run akhil/simpleweb            # This will create the container from our image. Below is the output
+
+> @ start /
+> node index.js
+
+Listening to port 8080
+
+# if we are using Docker Toolbox then we will not be able to use localhost in any of the applications going forward. Instead, we will need to use 192.168.99.100. When we access the Node application in the browser, we would type 192.168.99.100:8080
+ 
+docker run -p 8080:8080 imageid   # Docker Run with port mapping. This command is used to route incoming requests coming from broweser to                                     this port on local host to the port inside the container.
+
+docker run -p 8080:8080 akhil/simpleweb
+
+> @ start /
+> node index.js
+
+Listening to port 8080
+
+# Now open the browser and enter http://192.168.99.100:8080/ which will send request to the port 8080 in the local machine which will route the request to port 8080 in the container.
+
+This will execute the index.js file and provide Hi There response back.
+
+docker run -p 5000:8080 akhil/simpleweb
+
+and then type http://192.168.99.100:5000/ in the browser, you will get the same Hi There response back.
+# Above 5000 port in local host is mapped to 8080 port in the container.
+
+docker run -it akhil/simpleweb sh    # opening a shell/terminal inside the container
+
+ls
+#This is the output
+Dockerfile         home               mnt                package.json       sbin               usr
+bin                index.js           node_modules       proc               srv                var
+dev                lib                opt                root               sys
+etc                media              package-lock.json  run                tmp
+
+#Installed dependencies will be placed under node_modules folder
+
+docker ps   # To get container id
+docker exec -it containerid sh    # This will open shell in the working directory
+ls
+cd /
+ls
+exit
+
+## FINAL DOCKER FILE
+
+# Specify a base image
+FROM node:alpine
+
+#SET UP WORKING DIRECTORY
+WORKDIR /usr/app
+
+# Install some dependencies
+COPY ./package.json ./
+# For npm install we only need package.json file. So we are copying that first
+RUN npm install
+
+#Here we are copying everything
+COPY ./ ./
+
+# Default command
+CMD ["npm", "start"]
+
+
+docker build -t akhil/simpleweb .
+
+
+
+
+
