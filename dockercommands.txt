@@ -279,6 +279,23 @@ CMD ["npm", "start"]
 
 docker build -t akhil/simpleweb .
 
+Docker-compose    #Used to start up multiple Docker containers at the same time
+
+docker-compose up     # Instead of docker run myimage
+docker-compose up --build  # To build an image. This command is used instead of docker build . and docker run myimage
+
+docker-compose up -d     # To start up multiple containers in the background
+
+docker-compose down      # To stop multiple containers
+
+# Restart policies of docker containers:
+"no" - Never attempt to restart this . container if it stops or crashes
+always  - If this container stops for any reason always attempt to restart it.
+on-failure - Only restart if this container stops with an error code
+unless-stopped  - Always restart unless we (the developers) forcibly stop it.
+
+ 
+
 
 
 
