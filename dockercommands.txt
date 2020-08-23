@@ -294,7 +294,17 @@ always  - If this container stops for any reason always attempt to restart it.
 on-failure - Only restart if this container stops with an error code
 unless-stopped  - Always restart unless we (the developers) forcibly stop it.
 
- 
+http://192.168.99.100:port -- This is url to be invoked
+
+Docker-compose ps   # To get the status of the containers
+
+npm run start       # Starts up a development server. For developement use only
+np run test         # Runs tests associated with the project
+npm run build       # Builds a production version of the application
+
+docker build -f Dockerfile.dev .    # To create an image using a specific docker file Dockerfile.dev
+
+
 
 
 
