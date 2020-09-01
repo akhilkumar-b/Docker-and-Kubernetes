@@ -296,17 +296,69 @@ unless-stopped  - Always restart unless we (the developers) forcibly stop it.
 
 http://192.168.99.100:port -- This is url to be invoked
 
+npm install -g create-react-app
+create-react-app frontend
+
 Docker-compose ps   # To get the status of the containers
 
 npm run start       # Starts up a development server. For developement use only
 np run test         # Runs tests associated with the project
 npm run build       # Builds a production version of the application
 
+Have to create a .env file if we are using windows Home OS and place this CHOKIDAR_USESPOLLING=true
+
 docker build -f Dockerfile.dev .    # To create an image using a specific docker file Dockerfile.dev
 
+docker run -it -p 3000:3000 -v /app/node_modules -v ${PWD}:/app -e CHOKIDAR_USEPOLLING=true imageid      #docker quickstart
+
+winpty docker run -it -p 3000:3000 -v /app/node_modules -v "/$(PWD)":/app -e CHOKIDAR_USEPOLLING=true imageid  #GitBash
+
+docker run -it -p 3000:3000 -v /app/node_modules -v /c/Users/username/frontend:/app -e CHOKIDAR_USEPOLLING=true imageid  #Powershell
+
+https://stackoverflow.com/questions/46044324/docker-not-propagating-file-changes-from-host-to-container
+
+# Docker-compose.yaml
+version: '3'
+services:
+  web:
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    build:
+      context: .
+      dockerfile: dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - /app/node_modules
+      - .:/app
+    stdin_open: true
+
+docker-compose up --build
+
+docker run -it imageid npm run test    # To run tests on our project
+
+# Live Updating Tests
+
+docker-compose up
+docker ps  # Take the id
+docker exec -it imageid npm run test
 
 
+# Using two base containers
 
+#Dockerfile
 
+FROM node:alpine as builder
+
+WORKDIR '/app'
+
+COPY package.json .
+RUN npm install
+
+COPY . .
+RUN npm run build
+
+FROM nginx
+COPY --from=builder /app/build /usr/share/nginx/html
 
 
